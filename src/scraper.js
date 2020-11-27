@@ -1,6 +1,27 @@
 const cheerio = require("cheerio");
 const axios = require("axios").default;
 
+const scrapSteam = async () => {
+  const steamUrl = "https://www.magazineluiza.com.br/busca/notebook/";
+
+  const html = await fethHtml(steamUrl);
+
+  const selector = cheerio.load(html);
+
+  const searchResults = selector("body").find(
+    "#productShowcaseSearch > div[class = 'searchproductShowCaseContent'] > li"
+  );
+
+  const deals = searchResults
+    .map((idx, el) => {
+      const elementSelector = selector(el);
+      return extractDeal(elementSelector);
+    })
+    .get();
+
+  return deals;
+};
+
 const fethHtml = async (url) => {
   try {
     const { data } = await axios.get(url);
@@ -14,61 +35,41 @@ const fethHtml = async (url) => {
 
 const extractDeal = (selector) => {
   const title = selector
-    .find(".responsive_search_name_combined")
-    .find("div[class='col search_name ellipsis'] > span[class='title']")
+    .find(".product")
+    .find("div[class = 'product-li'] > div[class = 'productTitle']")
     .text()
     .trim();
 
-  const releaseDate = selector
-    .find(".responsive_search_name_combined")
-    .find("div[class='col search_released responsive_secondrow']")
-    .text()
-    .trim();
+  console.log(title);
 
-  const link = selector.attr("href").trim();
+  // const releaseDate = selector
+  //   .find(".SearchPage_SearchList__HL7RI col")
+  //   .find("div[class='col search_released responsive_secondrow']")
+  //   .text()
+  //   .trim();
 
-  const priceSelector = selector
-    .find(
-      "div[class='col search_price_discount_combined responsive_secondrow']"
-    )
-    .find("div[class='col search_price discounted responsive_secondrow']");
+  // const link = selector.attr("href").trim();
 
-  const originalPrice = priceSelector.find("span > strike").text().trim();
+  // const priceSelector = selector
+  //   .find(
+  //     "div[class='col search_price_discount_combined responsive_secondrow']"
+  //   )
+  //   .find("div[class='col search_price discounted responsive_secondrow']");
 
-  const pricesHtml = priceSelector.html().trim();
-  const matched = pricesHtml.match(/(<br>(.+\s[0-9].+.\d+))/);
+  // const originalPrice = priceSelector.find("span > strike").text().trim();
 
-  const discountedPrice = matched[matched.length - 1];
+  // const pricesHtml = priceSelector.html().trim();
+  // const matched = pricesHtml.match(/(<br>(.+\s[0-9].+.\d+))/);
+
+  // const discountedPrice = matched[matched.length - 1];
 
   return {
     title,
-    releaseDate,
-    originalPrice,
-    discountedPrice,
-    link,
+    // releaseDate,
+    // originalPrice,
+    // discountedPrice,
+    // link,
   };
-};
-
-const scrapSteam = async () => {
-  const steamUrl =
-    "https://store.steampowered.com/search/?filter=weeklongdeals";
-
-  const html = await fethHtml(steamUrl);
-
-  const selector = cheerio.load(html);
-
-  const searchResults = selector("body").find(
-    "#search_result_container > #search_resultsRows > a"
-  );
-
-  const deals = searchResults
-    .map((idx, el) => {
-      const elementSelector = selector(el);
-      return extractDeal(elementSelector);
-    })
-    .get();
-
-  return deals;
 };
 
 module.exports = scrapSteam;
